@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #05070f;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+a,
+input,
+textarea {
+  border-radius: 8px;
+}
+
+::selection {
+  background: rgba(39, 244, 255, 0.35);
+}
+
+.theme-light {
+  color-scheme: light;
+}
+
+.theme-light .theme-light\:bg-slate-100 {
+  background-color: #f1f5f9;
+}
+
+.theme-light .theme-light\:bg-white\/70 {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.theme-light .theme-light\:text-slate-950 {
+  color: #020617;
+}
+
+.theme-light .theme-light\:text-slate-900 {
+  color: #0f172a;
+}
+
+.theme-light .theme-light\:text-slate-700 {
+  color: #334155;
+}
+
+.theme-light .theme-light\:text-slate-650 {
+  color: #475569;
+}
+
+.theme-light .theme-light\:text-slate-600 {
+  color: #475569;
+}
+
+.theme-light {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.theme-light [class*="text-white"] {
+  color: #334155 !important;
+}
+
+.theme-light [class*="text-ink"] {
+  color: #0f172a !important;
+}
+
+.theme-light [class*="bg-panel"] {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+}
+
+.theme-light [class*="bg-black"] {
+  background-color: rgba(255, 255, 255, 0.64) !important;
+}
+
+.theme-light input,
+.theme-light textarea,
+.theme-light select {
+  color: #0f172a !important;
+  background-color: rgba(255, 255, 255, 0.78) !important;
+}
+
+.theme-light input::placeholder,
+.theme-light textarea::placeholder {
+  color: #64748b;
+}
+
+.theme-light option {
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.theme-light canvas {
+  background: #020617;
+}
+
+.theme-light .text-cyanCore {
+  color: #02778f !important;
+}
+
+.theme-light .text-greenCore {
+  color: #087f3c !important;
+}

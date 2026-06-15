@@ -1,0 +1,22 @@
+Vince Matthew Magampon
+IT Support & Automation Developer
+
+Summary
+Building systems that automate work and solve technical problems. Focused on IT support, workflow automation, troubleshooting, data processing, and internal business systems.
+
+Core Skills
+- Power Apps
+- Power Automate
+- SharePoint
+- Teams Automation
+- WordPress
+- HTML/CSS
+- Excel Macros
+- CSV Integration
+- Pivot Tables
+- Hardware Troubleshooting
+- RAM/SSD Upgrades
+- Sage Integration
+
+Portfolio Note
+Replace this placeholder with Vince's final PDF resume before production deployment.

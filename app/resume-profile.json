@@ -1,0 +1,105 @@
+{
+  "name": "Vince Matthew Magampon",
+  "publicTitle": "IT Support Specialist & Automation Developer",
+  "brandRoles": [
+    "IT Support Specialist",
+    "Automation Developer",
+    "Workflow Optimization Engineer",
+    "Technical Operations Support",
+    "Business Process Automation Developer"
+  ],
+  "summary": "IT Support & Automation Developer specializing in workflow optimization, technical troubleshooting, business process automation, and practical operations support.",
+  "specialization": "Workflow automation, endpoint support, business systems, data processing, and technical operations dashboards.",
+  "detectedTechnologies": [
+    "Power Apps",
+    "Power Automate",
+    "SharePoint",
+    "Teams Automation",
+    "WordPress",
+    "HTML",
+    "CSS",
+    "Excel",
+    "Excel Macros",
+    "CSV",
+    "XML",
+    "Sage",
+    "OneDrive",
+    "Printer",
+    "Hardware Troubleshooting"
+  ],
+  "experienceHighlights": [
+    "Provides technical operations support across troubleshooting, hardware, software, and user workflow issues.",
+    "Builds business process automation using Power Platform, SharePoint, Teams notifications, and reporting workflows.",
+    "Develops spreadsheet and data-processing utilities for Excel, CSV, XML, and business system imports.",
+    "Supports WordPress and internal website improvements, including inquiry workflows and content/interface updates.",
+    "Improves operational visibility through task tracking, status dashboards, and workflow monitoring systems."
+  ],
+  "certifications": [
+    "AI seminars",
+    "Excel training",
+    "Prompt Engineering",
+    "Future AI Summit"
+  ],
+  "education": [
+    "Education details available in the private resume; public portfolio keeps this section generalized."
+  ],
+  "skillGroups": [
+    {
+      "category": "Automation",
+      "skills": [
+        "Power Apps",
+        "Power Automate",
+        "SharePoint",
+        "Teams Automation",
+        "Workflow Design"
+      ]
+    },
+    {
+      "category": "IT Support",
+      "skills": [
+        "Troubleshooting",
+        "Hardware Support",
+        "Printer Support",
+        "OneDrive Support",
+        "Windows Support"
+      ]
+    },
+    {
+      "category": "Data Processing",
+      "skills": [
+        "Excel",
+        "Excel Macros",
+        "CSV Processing",
+        "XML Conversion"
+      ]
+    },
+    {
+      "category": "Development Tools",
+      "skills": [
+        "WordPress",
+        "HTML",
+        "CSS",
+        "JavaScript",
+        "Website Customization"
+      ]
+    },
+    {
+      "category": "Business Systems",
+      "skills": [
+        "Sage Integration",
+        "Reporting Automation",
+        "Operations Tracking",
+        "Internal Tools"
+      ]
+    }
+  ],
+  "recommendedProjects": [
+    "Workflow Automation System",
+    "Internal Reporting Dashboard",
+    "Task Tracking Platform",
+    "CSV Processing Automation",
+    "Business Operations Support Tools",
+    "XML Converter Utility"
+  ],
+  "privacyNote": "Sensitive personal information was redacted before public display."
+}
