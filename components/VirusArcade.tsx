@@ -10,7 +10,7 @@ type Enemy = { x: number; y: number; r: number; hp: number; maxHp: number; speed
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; color: string; size: number };
 type Pickup = { x: number; y: number; r: number; type: string; kind: "energy" | "upgrade"; amount?: number; vy: number };
 type Floater = { x: number; y: number; text: string; life: number; color: string };
-type ScoreEntry = { score: number; cleared: number; accuracy: number; time: number };
+type ScoreEntry = { score: number; cleared: number; accuracy: number; time: number; date: string };
 
 const W = 760;
 const H = 520;
@@ -61,7 +61,14 @@ function initialGame() {
 function getScores(): ScoreEntry[] {
   if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(localStorage.getItem(SCORE_KEY) ?? "[]").slice(0, 3);
+    const raw = JSON.parse(localStorage.getItem(SCORE_KEY) ?? "[]") as Array<Record<string, unknown>>;
+    return raw.slice(0, 5).map((entry) => ({
+      score: Number(entry.score) || 0,
+      cleared: Number(entry.cleared) || 0,
+      accuracy: Number(entry.accuracy) || 0,
+      time: Number(entry.time) || 0,
+      date: typeof entry.date === "string" ? entry.date : "—"
+    }));
   } catch {
     return [];
   }
@@ -88,9 +95,38 @@ function saveAchievement(name: string, setUnlocked: (items: string[]) => void, s
 
 function HudCard({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
   return (
-    <div className={`border bg-black/30 p-3 backdrop-blur theme-light:bg-white/70 ${warn ? "border-red-400/60 shadow-[0_0_24px_rgba(248,113,113,.25)]" : "border-cyanCore/25"}`}>
+    <div className={`border bg-black/30 p-2 backdrop-blur md:p-3 theme-light:bg-white/70 ${warn ? "border-red-400/60 shadow-[0_0_24px_rgba(248,113,113,.25)]" : "border-cyanCore/25"}`}>
       <div className={`text-[10px] uppercase tracking-[0.2em] ${warn ? "text-red-300" : "text-cyanCore"}`}>{label}</div>
-      <div className={`mt-1 font-mono text-lg font-black ${warn ? "text-red-300" : "text-greenCore"}`}>{value}</div>
+      <div className={`mt-1 font-mono text-base font-black md:text-lg ${warn ? "text-red-300" : "text-greenCore"}`}>{value}</div>
+    </div>
+  );
+}
+
+function DPadBtn({ label, onDown, onUp }: { label: string; onDown: () => void; onUp: () => void }) {
+  return (
+    <button
+      onTouchStart={(e) => { e.preventDefault(); onDown(); }}
+      onTouchEnd={(e) => { e.preventDefault(); onUp(); }}
+      onMouseDown={onDown}
+      onMouseUp={onUp}
+      onMouseLeave={onUp}
+      onContextMenu={(e) => e.preventDefault()}
+      className="grid h-14 w-14 select-none place-items-center rounded-lg border-2 border-cyanCore/50 bg-cyanCore/15 text-xl font-bold text-cyanCore active:bg-cyanCore active:text-black"
+    >
+      {label}
+    </button>
+  );
+}
+
+function DPad({ onPress }: { onPress: (key: string, active: boolean) => void }) {
+  return (
+    <div className="grid grid-cols-3 gap-1.5" onContextMenu={(e) => e.preventDefault()}>
+      <div />
+      <DPadBtn label="▲" onDown={() => onPress("w", true)} onUp={() => onPress("w", false)} />
+      <div />
+      <DPadBtn label="◀" onDown={() => onPress("a", true)} onUp={() => onPress("a", false)} />
+      <DPadBtn label="▼" onDown={() => onPress("s", true)} onUp={() => onPress("s", false)} />
+      <DPadBtn label="▶" onDown={() => onPress("d", true)} onUp={() => onPress("d", false)} />
     </div>
   );
 }
@@ -103,6 +139,9 @@ export default function VirusArcade() {
   const audioRef = useRef<AudioContext | null>(null);
   const gameRef = useRef(initialGame());
   const modeRef = useRef<Mode>("idle");
+  const soundRef = useRef(false);
+  const fireIntervalRef = useRef<number | null>(null);
+
   const [mode, setMode] = useState<Mode>("idle");
   const [sound, setSound] = useState(false);
   const [toast, setToast] = useState("Security simulation ready.");
@@ -119,20 +158,24 @@ export default function VirusArcade() {
     accuracy: 100,
     time: 0,
     upgrades: [] as string[],
-    debug: { fps: 60, enemies: 0, bullets: 0, particles: 0, memory: "0 KB" }
   });
 
-  useEffect(() => {
-    modeRef.current = mode;
-  }, [mode]);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+  useEffect(() => { soundRef.current = sound; }, [sound]);
 
   useEffect(() => {
     setScores(getScores());
     setUnlocked(getAchievements());
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (fireIntervalRef.current) clearInterval(fireIntervalRef.current);
+    };
+  }, []);
+
   const tone = useCallback((freq: number, duration = 0.04, type: OscillatorType = "sine") => {
-    if (!sound || typeof window === "undefined") return;
+    if (!soundRef.current || typeof window === "undefined") return;
     const Ctor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
     const ctx = audioRef.current ?? new Ctor();
@@ -146,9 +189,9 @@ export default function VirusArcade() {
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + duration);
-  }, [sound]);
+  }, []);
 
-  const burst = (x: number, y: number, color: string, amount = 14) => {
+  const burst = useCallback((x: number, y: number, color: string, amount = 14) => {
     const game = gameRef.current;
     const room = Math.max(0, MAX_PARTICLES - game.particles.length);
     for (let i = 0; i < Math.min(amount, room); i += 1) {
@@ -156,20 +199,20 @@ export default function VirusArcade() {
       const s = 1 + Math.random() * 4;
       game.particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 28 + Math.random() * 34, color, size: 1 + Math.random() * 3 });
     }
-  };
+  }, []);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     gameRef.current = initialGame();
-    setHud({ health: 100, firewall: 100, threats: 0, score: 0, wave: 1, energy: 100, combo: 1, accuracy: 100, time: 0, upgrades: [], debug: { fps: 60, enemies: 0, bullets: 0, particles: 0, memory: "0 KB" } });
-    setToast("Mission armed. SPACE, click, or tap SHOOT to fire.");
-  };
+    setHud({ health: 100, firewall: 100, threats: 0, score: 0, wave: 1, energy: 100, combo: 1, accuracy: 100, time: 0, upgrades: [] });
+    setToast("Mission armed. SPACE, click, or tap FIRE to shoot.");
+  }, []);
 
-  const start = () => {
+  const start = useCallback(() => {
     reset();
     gameRef.current.startedAt = performance.now();
     setMode("running");
     tone(660, 0.08, "square");
-  };
+  }, [reset, tone]);
 
   const fireWeapon = useCallback(() => {
     const game = gameRef.current;
@@ -199,6 +242,23 @@ export default function VirusArcade() {
     tone(game.upgrades.beam > 0 ? 1180 : 900, 0.03, "square");
   }, [tone]);
 
+  const startFiring = useCallback(() => {
+    fireWeapon();
+    if (fireIntervalRef.current) clearInterval(fireIntervalRef.current);
+    fireIntervalRef.current = window.setInterval(fireWeapon, 110);
+  }, [fireWeapon]);
+
+  const stopFiring = useCallback(() => {
+    if (fireIntervalRef.current) {
+      clearInterval(fireIntervalRef.current);
+      fireIntervalRef.current = null;
+    }
+  }, []);
+
+  const pressDir = useCallback((key: string, active: boolean) => {
+    keysRef.current[key] = active;
+  }, []);
+
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
       keysRef.current[event.key.toLowerCase()] = true;
@@ -222,8 +282,14 @@ export default function VirusArcade() {
     const game = gameRef.current;
     const time = Math.max(1, Math.round((performance.now() - game.startedAt) / 1000));
     const accuracy = game.shots ? Math.round((game.hits / game.shots) * 100) : 100;
-    const entry = { score: game.score, cleared: game.cleared, accuracy, time };
-    const nextScores = [...getScores(), entry].sort((a, b) => b.score - a.score).slice(0, 3);
+    const entry: ScoreEntry = {
+      score: game.score,
+      cleared: game.cleared,
+      accuracy,
+      time,
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    };
+    const nextScores = [...getScores(), entry].sort((a, b) => b.score - a.score).slice(0, 5);
     localStorage.setItem(SCORE_KEY, JSON.stringify(nextScores));
     setScores(nextScores);
     const totalKills = Number(localStorage.getItem(TOTAL_KEY) ?? "0") + game.cleared;
@@ -234,7 +300,8 @@ export default function VirusArcade() {
     if (accuracy >= 90 && game.shots > 20) saveAchievement("Sharp Shooter", setUnlocked, setToast);
     if (totalKills >= 500) saveAchievement("Threat Eliminator", setUnlocked, setToast);
     setMode(won ? "won" : "lost");
-  }, []);
+    tone(won ? 660 : 130, won ? 0.3 : 0.4, won ? "triangle" : "sawtooth");
+  }, [tone]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -354,7 +421,7 @@ export default function VirusArcade() {
         ctx.fillStyle = "#69ff8f"; ctx.font = "bold 24px monospace"; ctx.textAlign = "center";
         ctx.fillText("VIRUS EXTERMINATION PROTOCOL", W / 2, 170);
         ctx.fillStyle = "rgba(215,251,255,.78)"; ctx.font = "15px monospace";
-        ctx.fillText("Move with mouse/touch/WASD. SPACE, click, or SHOOT fires weapons.", W / 2, 205);
+        ctx.fillText("Move: mouse/touch/WASD. Fire: SPACE/click/FIRE button.", W / 2, 205);
         rafRef.current = requestAnimationFrame(loop);
         return;
       }
@@ -416,7 +483,11 @@ export default function VirusArcade() {
                 game.floaters.push({ x: e.x, y: e.y, text: `+${points}`, life: 42, color: "#27f4ff" });
                 burst(e.x, e.y, e.boss ? "#ff2f7d" : "#ff5ef1", e.boss ? 60 : 18);
                 tone(e.boss ? 90 : 250, e.boss ? 0.2 : 0.06, "sawtooth");
-                if (e.boss) finishGame(true);
+                if (e.boss) {
+                  burst(e.x, e.y, "#69ff8f", 80);
+                  burst(e.x, e.y, "#27f4ff", 60);
+                  finishGame(true);
+                }
               }
             }
           }
@@ -455,6 +526,8 @@ export default function VirusArcade() {
           }
         });
         game.pickups = game.pickups.filter((u) => u.y < H + 40);
+
+        if (game.floaters.length > MAX_FLOATERS) game.floaters = game.floaters.slice(-MAX_FLOATERS);
       }
 
       const sx = game.shake > 0 ? (Math.random() - 0.5) * game.shake : 0;
@@ -506,26 +579,20 @@ export default function VirusArcade() {
         game.lastHudAt = now;
         const accuracy = game.shots ? Math.round((game.hits / game.shots) * 100) : 100;
         const active = Object.entries(game.upgrades).filter(([, v]) => v > 0).map(([k, v]) => `${k.toUpperCase()} ${Math.ceil(v / 60)}s`);
-        const objectCount = game.enemies.length + game.bullets.length + game.particles.length + game.pickups.length + game.floaters.length;
         setHud({
           health: Math.round(game.player.health), firewall: Math.round(game.player.health), threats: game.cleared,
           score: game.score, wave: game.wave, energy: Math.round(game.player.energy), combo: game.combo,
           accuracy, time: game.startedAt ? Math.round((now - game.startedAt) / 1000) : 0, upgrades: active,
-          debug: {
-            fps: Math.round(game.fps),
-            enemies: game.enemies.length,
-            bullets: game.bullets.length,
-            particles: game.particles.length,
-            memory: `${Math.max(1, Math.round(objectCount * 0.35))} KB`
-          }
         });
       }
       rafRef.current = requestAnimationFrame(loop);
     };
 
     rafRef.current = requestAnimationFrame(loop);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [mode, tone, finishGame]);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [tone, finishGame, burst]);
 
   const pointerToCanvas = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
@@ -542,43 +609,52 @@ export default function VirusArcade() {
     ["Threat Eliminator", "Destroy 500 total enemies"]
   ];
 
+  const specializations = ["IT Support", "Workflow Automation", "Power Apps", "Power Automate", "Process Optimization", "Technical Troubleshooting"];
+
   return (
-    <section id="game" className="mx-auto max-w-7xl px-4 py-20 text-ink theme-light:text-slate-950">
+    <section id="game" className="mx-auto max-w-7xl px-4 py-20 text-ink max-md:px-2 max-md:py-10 theme-light:text-slate-950">
       <div className="mb-9">
         <div className="mb-2 text-xs font-semibold uppercase tracking-[0.32em] text-greenCore">Security Arcade</div>
         <h2 className="text-3xl font-bold md:text-5xl">Virus Extermination Protocol</h2>
       </div>
-      <div className="border border-white/10 bg-panel p-5 shadow-glow backdrop-blur-xl theme-light:bg-white/70">
-        <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+      <div className="border border-white/10 bg-panel p-5 shadow-glow backdrop-blur-xl max-md:p-3 theme-light:bg-white/70">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-xs uppercase tracking-[0.25em] text-greenCore">Cyber Defense Simulation</div>
-            <p className="mt-2 text-white/70 theme-light:text-slate-700">Manual-fire security shooter with energy management, upgrades, score tracking, achievements, and THE ROOT VIRUS boss battle.</p>
+            <p className="mt-2 text-sm text-white/70 theme-light:text-slate-700">Manual-fire security shooter with energy management, upgrades, achievements, and THE ROOT VIRUS boss.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={start} className="inline-flex items-center gap-2 border border-greenCore px-4 py-3 font-semibold text-greenCore transition hover:bg-greenCore hover:text-black">{mode === "idle" ? <Play size={16} /> : <RotateCcw size={16} />} {mode === "idle" ? "Play Security Simulation" : "Restart System"}</button>
-            <button onClick={() => setMode((v) => (v === "paused" ? "running" : v === "running" ? "paused" : v))} className="inline-flex items-center gap-2 border border-cyanCore/40 px-4 py-3 text-cyanCore transition hover:bg-cyanCore hover:text-black"><Pause size={16} /> {mode === "paused" ? "Resume" : "Pause"}</button>
-            <button onClick={() => setSound(!sound)} className="inline-flex items-center gap-2 border border-white/15 px-4 py-3 text-white/70 transition hover:border-greenCore hover:text-greenCore theme-light:text-slate-700">{sound ? <Volume2 size={16} /> : <VolumeX size={16} />} Sound {sound ? "ON" : "OFF"}</button>
+            <button onClick={start} className="inline-flex items-center gap-2 border border-greenCore px-3 py-2 text-sm font-semibold text-greenCore transition hover:bg-greenCore hover:text-black md:px-4 md:py-3">
+              {mode === "idle" ? <Play size={16} /> : <RotateCcw size={16} />} {mode === "idle" ? "Play" : "Restart"}
+            </button>
+            <button onClick={() => setMode((v) => (v === "paused" ? "running" : v === "running" ? "paused" : v))} className="inline-flex items-center gap-2 border border-cyanCore/40 px-3 py-2 text-sm text-cyanCore transition hover:bg-cyanCore hover:text-black md:px-4 md:py-3">
+              <Pause size={16} /> {mode === "paused" ? "Resume" : "Pause"}
+            </button>
+            <button onClick={() => setSound(!sound)} className="inline-flex items-center gap-2 border border-white/15 px-3 py-2 text-sm text-white/70 transition hover:border-greenCore hover:text-greenCore md:px-4 md:py-3 theme-light:text-slate-700">
+              {sound ? <Volume2 size={16} /> : <VolumeX size={16} />} {sound ? "ON" : "OFF"}
+            </button>
           </div>
         </div>
 
-        <div className="mb-4 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-          <HudCard label="System Health" value={`${hud.health}%`} />
-          <HudCard label="Firewall Level" value={`${hud.firewall}%`} />
-          <HudCard label="Virus Threats" value={hud.threats.toString()} />
+        <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3 xl:grid-cols-6">
+          <HudCard label="Health" value={`${hud.health}%`} />
+          <HudCard label="Firewall" value={`${hud.firewall}%`} />
+          <HudCard label="Cleared" value={hud.threats.toString()} />
           <HudCard label="Score" value={hud.score.toLocaleString()} />
           <HudCard label="Wave" value={hud.wave.toString()} />
           <HudCard label="Energy" value={`${hud.energy}%`} warn={hud.energy < 25} />
         </div>
-        <div className="mb-4 grid gap-3 md:grid-cols-3">
+        <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3">
           <HudCard label="Accuracy" value={`${hud.accuracy}%`} />
-          <HudCard label="Time Survived" value={`${hud.time}s`} />
-          <HudCard label="Active Upgrades" value={hud.upgrades.length ? hud.upgrades.join(" / ") : "NONE"} />
+          <HudCard label="Time" value={`${hud.time}s`} />
+          <HudCard label="Upgrades" value={hud.upgrades.length ? hud.upgrades.join(" / ") : "NONE"} />
         </div>
 
         <div className="relative overflow-hidden border border-cyanCore/30 bg-black shadow-glow">
           <canvas
             ref={canvasRef}
-            className="block aspect-[19/13] w-full touch-none"
+            className="block w-full touch-none"
+            style={{ aspectRatio: `${W}/${H}` }}
             onMouseMove={(e) => pointerToCanvas(e.clientX, e.clientY)}
             onMouseEnter={(e) => pointerToCanvas(e.clientX, e.clientY)}
             onMouseDown={() => fireWeapon()}
@@ -587,29 +663,64 @@ export default function VirusArcade() {
             onTouchMove={(e) => { const t = e.touches[0]; if (t) pointerToCanvas(t.clientX, t.clientY); }}
             onTouchEnd={() => { pointerRef.current.active = false; }}
           />
-          <div className="pointer-events-none absolute left-4 top-4 border border-red-400/40 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-200">{hud.energy < 10 ? "CRITICAL POWER LEVEL" : hud.energy < 25 ? "LOW ENERGY" : mode === "running" && hud.wave >= 5 ? "ROOT VIRUS WARNING" : "NETWORK THREAT MONITOR"}</div>
-          <button onClick={fireWeapon} className="absolute bottom-4 right-4 border border-greenCore bg-greenCore/20 px-6 py-4 font-black text-greenCore shadow-greenGlow backdrop-blur transition hover:bg-greenCore hover:text-black md:hidden">SHOOT</button>
+          <div className="pointer-events-none absolute left-2 top-2 border border-red-400/40 bg-red-500/10 px-2 py-1 font-mono text-[10px] text-red-200 md:left-4 md:top-4 md:px-3 md:py-2 md:text-xs">
+            {hud.energy < 10 ? "CRITICAL POWER" : hud.energy < 25 ? "LOW ENERGY" : mode === "running" && hud.wave >= 5 ? "ROOT VIRUS WARNING" : "THREAT MONITOR"}
+          </div>
           <AnimatePresence>
             {toast && (
-              <motion.div key={toast} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="pointer-events-none absolute bottom-4 left-4 right-4 border border-greenCore/40 bg-greenCore/10 px-4 py-3 text-sm text-greenCore backdrop-blur">
+              <motion.div key={toast} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="pointer-events-none absolute bottom-2 left-2 right-2 border border-greenCore/40 bg-greenCore/10 px-3 py-2 text-xs text-greenCore backdrop-blur md:bottom-4 md:left-4 md:right-4 md:px-4 md:py-3 md:text-sm">
                 {toast} <span className="ml-2 text-cyanCore">Combo x{hud.combo}</span>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
+        <div className="mt-3 flex items-center justify-between gap-4 md:hidden" onContextMenu={(e) => e.preventDefault()}>
+          <DPad onPress={pressDir} />
+          <button
+            onTouchStart={(e) => { e.preventDefault(); startFiring(); }}
+            onTouchEnd={(e) => { e.preventDefault(); stopFiring(); }}
+            onContextMenu={(e) => e.preventDefault()}
+            className="h-[104px] w-28 select-none rounded-xl border-2 border-greenCore bg-greenCore/20 text-lg font-black text-greenCore shadow-greenGlow active:bg-greenCore active:text-black"
+          >
+            FIRE
+          </button>
+        </div>
+
         {(mode === "won" || mode === "lost") && (
-          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mt-5 border border-greenCore/40 bg-greenCore/10 p-5 text-center shadow-greenGlow">
-            <h3 className="text-3xl font-black text-greenCore">Virus Extermination Protocol</h3>
-            <p className="mt-3 text-sm uppercase tracking-[0.25em] text-cyanCore">Designed & Developed By</p>
-            <p className="mt-2 text-2xl font-bold">Vince Matthew Magampon</p>
+          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mt-5 border border-greenCore/40 bg-greenCore/10 p-5 text-center shadow-greenGlow md:p-8">
+            <h3 className="text-2xl font-black text-greenCore md:text-3xl">Virus Extermination Protocol</h3>
+            <p className="mt-3 text-xs uppercase tracking-[0.25em] text-cyanCore md:text-sm">Designed & Developed By</p>
+            <p className="mt-2 text-xl font-bold md:text-2xl">Vince Matthew Magampon</p>
             <p className="text-cyanCore">IT Support & Automation Developer</p>
-            <p className="mt-4 text-white/70 theme-light:text-slate-700">Specializations: Workflow Automation, Power Apps Development, Technical Support, Business Process Optimization, System Integration.</p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {specializations.map((s) => (
+                <span key={s} className="border border-cyanCore/30 bg-cyanCore/10 px-3 py-1 text-xs text-cyanCore md:text-sm">{s}</span>
+              ))}
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm md:inline-flex md:flex-wrap md:justify-center md:gap-3">
+              <div className="border border-white/10 bg-black/20 p-3">
+                <div className="text-[10px] uppercase text-cyanCore">Score</div>
+                <div className="mt-1 font-mono font-bold text-greenCore">{hud.score.toLocaleString()}</div>
+              </div>
+              <div className="border border-white/10 bg-black/20 p-3">
+                <div className="text-[10px] uppercase text-cyanCore">Cleared</div>
+                <div className="mt-1 font-mono font-bold text-greenCore">{hud.threats}</div>
+              </div>
+              <div className="border border-white/10 bg-black/20 p-3">
+                <div className="text-[10px] uppercase text-cyanCore">Accuracy</div>
+                <div className="mt-1 font-mono font-bold text-greenCore">{hud.accuracy}%</div>
+              </div>
+              <div className="border border-white/10 bg-black/20 p-3">
+                <div className="text-[10px] uppercase text-cyanCore">Time</div>
+                <div className="mt-1 font-mono font-bold text-greenCore">{hud.time}s</div>
+              </div>
+            </div>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
-              <button onClick={start} className="border border-greenCore px-4 py-3 text-greenCore hover:bg-greenCore hover:text-black">Play Again</button>
-              <a href="#home" className="border border-cyanCore/40 px-4 py-3 text-cyanCore hover:bg-cyanCore hover:text-black">Return To Portfolio</a>
-              <a href="#timeline" className="border border-cyanCore/40 px-4 py-3 text-cyanCore hover:bg-cyanCore hover:text-black">View Projects</a>
-              <a href="#contact" className="inline-flex items-center gap-2 border border-cyanCore/40 px-4 py-3 text-cyanCore hover:bg-cyanCore hover:text-black"><Mail size={16} /> Contact Me</a>
+              <button onClick={start} className="border border-greenCore px-4 py-3 text-sm font-semibold text-greenCore hover:bg-greenCore hover:text-black">Play Again</button>
+              <a href="#home" className="border border-cyanCore/40 px-4 py-3 text-sm text-cyanCore hover:bg-cyanCore hover:text-black">Return To Portfolio</a>
+              <a href="#timeline" className="border border-cyanCore/40 px-4 py-3 text-sm text-cyanCore hover:bg-cyanCore hover:text-black">View Projects</a>
+              <a href="#contact" className="inline-flex items-center gap-2 border border-cyanCore/40 px-4 py-3 text-sm text-cyanCore hover:bg-cyanCore hover:text-black"><Mail size={16} /> Contact Me</a>
             </div>
           </motion.div>
         )}
@@ -618,8 +729,19 @@ export default function VirusArcade() {
           <div className="border border-white/10 bg-black/20 p-4">
             <h3 className="font-bold text-cyanCore">TOP SECURITY AGENTS</h3>
             <div className="mt-3 space-y-2 font-mono text-sm">
-              {(scores.length ? scores : [{ score: 0, cleared: 0, accuracy: 0, time: 0 }]).map((s, i) => (
-                <div key={`${s.score}-${i}`} className="flex justify-between border border-white/10 p-2"><span>{i + 1}. {s.score.toLocaleString()} Points</span><span>{s.accuracy}% / {s.time}s</span></div>
+              <div className="flex items-center justify-between border border-cyanCore/20 p-2 text-[10px] uppercase tracking-wider text-cyanCore">
+                <span className="w-8">Rank</span>
+                <span className="flex-1 text-center">Score</span>
+                <span className="w-12 text-center">Acc</span>
+                <span className="w-24 text-right">Date</span>
+              </div>
+              {(scores.length ? scores : [{ score: 0, cleared: 0, accuracy: 0, time: 0, date: "—" }]).map((s, i) => (
+                <div key={`${s.score}-${s.date}-${i}`} className="flex items-center justify-between border border-white/10 p-2">
+                  <span className="w-8 text-greenCore">#{i + 1}</span>
+                  <span className="flex-1 text-center">{s.score.toLocaleString()}</span>
+                  <span className="w-12 text-center">{s.accuracy}%</span>
+                  <span className="w-24 text-right text-white/50">{s.date}</span>
+                </div>
               ))}
             </div>
           </div>
@@ -635,8 +757,8 @@ export default function VirusArcade() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 text-sm text-white/65 md:grid-cols-3 theme-light:text-slate-700">
-          <div className="border border-white/10 bg-black/20 p-3">Controls: SPACE, left click, or mobile SHOOT button. Movement: mouse, touch, WASD, or arrows.</div>
+        <div className="mt-4 grid gap-2 text-xs text-white/65 md:grid-cols-3 md:gap-3 md:text-sm theme-light:text-slate-700">
+          <div className="border border-white/10 bg-black/20 p-3">Controls: SPACE, left click, or FIRE button. Movement: mouse, touch canvas, D-pad, WASD, or arrows.</div>
           <div className="border border-white/10 bg-black/20 p-3">Energy: each shot costs 3%. Pick up energy cells to refill weapons.</div>
           <div className="border border-white/10 bg-black/20 p-3">Upgrades: Rapid Fire, Dual Cannons, Firewall Blaster, Antivirus Beam, EMP Pulse.</div>
         </div>

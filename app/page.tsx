@@ -4,18 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from "recharts";
 import workRecords from "./work-records.json";
 import resumeProfile from "./resume-profile.json";
 import FixTheSystemGame from "@/components/VirusArcade";
@@ -24,17 +12,14 @@ import {
   Bot,
   BrainCircuit,
   BriefcaseBusiness,
-  Check,
   ChevronRight,
   Cpu,
   DatabaseZap,
   Download,
   Gamepad2,
-  Github,
   Mail,
   Moon,
   Network,
-  Play,
   Power,
   RadioTower,
   Send,
@@ -57,37 +42,13 @@ const bootLines = [
 
 const sections = [
   "about",
-  "experience",
   "tasks",
   "skills",
-  "tech",
-  "map",
   "timeline",
   "terminal",
   "certifications",
   "game",
   "contact"
-];
-
-const experiences = [
-  {
-    name: "HR Automation Workflow",
-    type: "Power Platform",
-    uptime: "99.9%",
-    detail: "Automated approvals, notifications, and employee request routing."
-  },
-  {
-    name: "Sage CSV Integration",
-    type: "Data Pipeline",
-    uptime: "98.7%",
-    detail: "Prepared and validated CSV imports for smoother accounting workflows."
-  },
-  {
-    name: "WordPress Inquiry System",
-    type: "Web Support",
-    uptime: "99.1%",
-    detail: "Improved inquiry capture, support handoff, and admin visibility."
-  }
 ];
 
 const skills = [
@@ -105,40 +66,7 @@ const skills = [
   { name: "Sage Integration", category: "Troubleshooting", level: 74, detail: "Supports accounting workflows through import preparation and issue isolation." }
 ];
 
-const projects = [
-  {
-    title: "Workflow Automation",
-    category: "Power Platform Solutions",
-    status: "ONLINE",
-    detail: "Approval flows, notification routing, and task orchestration for business teams.",
-    signal: [42, 64, 52, 76, 70, 92, 84]
-  },
-  {
-    title: "IT Support Systems",
-    category: "IT Support Systems",
-    status: "ONLINE",
-    detail: "Ticket triage dashboards and repeatable troubleshooting playbooks.",
-    signal: [32, 44, 63, 58, 79, 74, 88]
-  },
-  {
-    title: "WordPress Customization",
-    category: "WordPress Customization",
-    status: "ONLINE",
-    detail: "Inquiry systems, form improvements, admin workflows, and UI refinements.",
-    signal: [55, 49, 70, 68, 82, 76, 90]
-  },
-  {
-    title: "Excel Automation",
-    category: "Excel Automation",
-    status: "ONLINE",
-    detail: "Macro-assisted reports, pivot dashboards, and CSV preparation utilities.",
-    signal: [38, 67, 61, 77, 86, 80, 95]
-  }
-];
-
 const certifications = resumeProfile.certifications;
-
-type GameStage = "intro" | "cable" | "virus" | "workflow" | "ticket" | "done";
 
 type WorkTask = {
   id: string;
@@ -190,38 +118,9 @@ const resume = resumeProfile as {
   privacyNote: string;
 };
 
-const chartColors = ["#27f4ff", "#69ff8f", "#f5d76e", "#ff5ef1", "#7aa7ff"];
-const operationsTasks = records.tasks;
-const operationsProjects = records.projects;
 const categoryData = Object.entries(records.analytics.categoryCounts).map(([name, value]) => ({ name, value }));
-const complexityData = Object.entries(records.analytics.complexityCounts).map(([name, value]) => ({ name, value }));
-const activityData = Object.entries(records.analytics.dateCounts).map(([date, value]) => ({
-  date: formatDate(date),
-  value
-}));
-const recentOperations = operationsTasks.slice(-8).reverse();
+const operationsProjects = records.projects;
 const resumeDownloadHref = "/Magampon_VinceMatthew_Resume.pdf";
-
-const operationsShowcase = [
-  {
-    name: "Power Automate Automation",
-    department: "Workflow Systems",
-    progress: 96,
-    detail: "Built an automation that uses one required input, such as a job number, to find matching row details from an Excel source and place the needed information into another sheet."
-  },
-  {
-    name: "Excel Macro Implementation",
-    department: "Excel Automation",
-    progress: 94,
-    detail: "Implemented Excel macro and formula workflows that populate needed business details automatically and prepare records for printing or processing."
-  },
-  {
-    name: "WordPress Website Support",
-    department: "Web Operations",
-    progress: 90,
-    detail: "Supported WordPress dashboard configuration, inquiry flow improvements, layout updates, and operational website maintenance."
-  }
-];
 
 const publicTaskCards = [
   { title: "Printer setup and troubleshooting", detail: "Configured printer sharing, installed drivers, and resolved common printing issues for users.", category: "HARDWARE", complexity: "Basic" },
@@ -283,45 +182,6 @@ const timelineProjects = [
   }
 ];
 
-const generalTaskDetails: Record<string, { title: string; detail: string }> = {
-  TROUBLESHOOT: {
-    title: "Technical troubleshooting operation",
-    detail: "Diagnosed a user or system issue, isolated the likely cause, and applied a practical support resolution."
-  },
-  HARDWARE: {
-    title: "Hardware support operation",
-    detail: "Handled workstation, peripheral, cabling, printer, or device setup support for daily business operations."
-  },
-  SOFTWARE: {
-    title: "Software support operation",
-    detail: "Resolved an application, file, driver, Office, OneDrive, or operating-system workflow issue."
-  },
-  PROGRAM: {
-    title: "Program and data workflow task",
-    detail: "Improved a spreadsheet, document, website, converter, script, or business-processing workflow."
-  },
-  AUTOMATION: {
-    title: "Automation workflow update",
-    detail: "Built or improved an automated workflow, notification path, data process, or internal operations system."
-  }
-};
-
-function formatDate(value: string) {
-  if (!value) return "N/A";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value.slice(0, 10);
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function publicTaskSummary(task: WorkTask) {
-  return generalTaskDetails[task.category] ?? generalTaskDetails.TROUBLESHOOT;
-}
-
-function publicProjectSummary(project: WorkProject) {
-  const tech = project.tech.join(", ");
-  return `${project.name} supports ${project.department || "business operations"} through ${tech || "workflow tooling"}. The system improves tracking, validation, reporting, notifications, or process visibility while keeping company-specific details private.`;
-}
-
 export default function Home() {
   const [booting, setBooting] = useState(false);
   const [bootIndex, setBootIndex] = useState(0);
@@ -333,7 +193,7 @@ export default function Home() {
   const [terminalLines, setTerminalLines] = useState<string[]>([
     "VinceOS terminal ready. Type 'help' to list commands."
   ]);
-  const [mouse, setMouse] = useState({ x: -200, y: -200 });
+  const glowRef = useRef<HTMLDivElement>(null);
   const [resumeOpen, setResumeOpen] = useState(false);
 
   useEffect(() => {
@@ -369,7 +229,12 @@ export default function Home() {
   }, [booting]);
 
   useEffect(() => {
-    const move = (event: MouseEvent) => setMouse({ x: event.clientX, y: event.clientY });
+    const move = (event: MouseEvent) => {
+      if (glowRef.current) {
+        glowRef.current.style.left = `${event.clientX - 80}px`;
+        glowRef.current.style.top = `${event.clientY - 80}px`;
+      }
+    };
     window.addEventListener("mousemove", move);
     return () => window.removeEventListener("mousemove", move);
   }, []);
@@ -431,10 +296,11 @@ export default function Home() {
       <AnimatePresence>{booting && <BootSequence index={bootIndex} sound={sound} setSound={setSound} />}</AnimatePresence>
 
       <div
+        ref={glowRef}
         className="pointer-events-none fixed z-50 hidden h-40 w-40 rounded-full blur-3xl md:block"
         style={{
-          left: mouse.x - 80,
-          top: mouse.y - 80,
+          left: -200,
+          top: -200,
           background: "radial-gradient(circle, rgba(39,244,255,.22), rgba(105,255,143,.08), transparent 70%)"
         }}
       />
@@ -449,11 +315,8 @@ export default function Home() {
       <Hero onPreviewResume={() => setResumeOpen(true)} />
       <ResumePreview open={resumeOpen} onClose={() => setResumeOpen(false)} />
       <About />
-      <ExperienceDashboard />
       <DailyTaskDashboard />
       <SkillsTree selectedSkill={selectedSkill} setSelectedSkill={setSelectedSkill} />
-      <TechnologyStack />
-      <ProjectMap />
       <ExperienceTimeline />
       <TerminalPanel
         input={terminalInput}
@@ -730,47 +593,6 @@ function About() {
   );
 }
 
-function ExperienceDashboard() {
-  return (
-    <Section id="experience">
-      <SectionTitle eyebrow="Live Systems" title="IT Operations Control Center" />
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <MetricCard label="Logged Work Records" value={records.analytics.totalTasks.toLocaleString()} detail="Vince TASK sheet operations" />
-        <MetricCard label="Project Systems" value={records.analytics.totalProjects.toString()} detail="Vince Projects sheet deployments" />
-        <MetricCard label="Workflow Stability" value="ONLINE" detail="Real support and automation history" />
-      </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {operationsShowcase.map((project) => (
-          <motion.div key={project.name} whileHover={{ y: -6 }} className="group border border-white/10 bg-panel p-5 shadow-glow backdrop-blur-xl">
-            <div className="mb-5 flex items-center justify-between">
-              <span className="flex items-center gap-2 text-xs font-bold text-greenCore">
-                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-greenCore shadow-greenGlow" /> [ONLINE]
-              </span>
-              <span className="text-xs text-white/50 theme-light:text-slate-600">{project.department}</span>
-            </div>
-            <h3 className="text-xl font-bold">{project.name}</h3>
-            <p className="mt-3 min-h-20 text-sm leading-6 text-white/65 theme-light:text-slate-700">{project.detail}</p>
-            <div className="mt-5 h-2 overflow-hidden bg-white/10">
-              <motion.div className="h-full bg-greenCore" initial={{ width: 0 }} whileInView={{ width: `${project.progress}%` }} viewport={{ once: true }} />
-            </div>
-            <div className="mt-2 text-xs text-cyanCore">Deployment {project.progress}%</div>
-          </motion.div>
-        ))}
-      </div>
-    </Section>
-  );
-}
-
-function MetricCard({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <div className="border border-cyanCore/20 bg-black/30 p-5 shadow-glow backdrop-blur-xl">
-      <div className="text-xs uppercase tracking-[0.28em] text-cyanCore">{label}</div>
-      <div className="mt-3 text-4xl font-black text-greenCore">{value}</div>
-      <div className="mt-2 text-sm text-white/60 theme-light:text-slate-700">{detail}</div>
-    </div>
-  );
-}
-
 function DailyTaskDashboard() {
   const [category, setCategory] = useState("ALL");
   const [complexity, setComplexity] = useState("ALL");
@@ -788,120 +610,45 @@ function DailyTaskDashboard() {
     <Section id="tasks">
       <SectionTitle eyebrow="Daily Ops" title="Daily Task Activity Dashboard" />
       <GlassPanel>
-          <div className="mb-5 grid gap-3 lg:grid-cols-[1fr_auto_auto]">
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              className="border border-white/10 bg-black/30 px-3 py-3 outline-none focus:border-cyanCore"
-              placeholder="Search task history..."
-            />
-            <select value={category} onChange={(event) => setCategory(event.target.value)} className="border border-white/10 bg-black/70 px-3 py-3 text-ink outline-none">
-              {categories.map((item) => <option key={item}>{item}</option>)}
-            </select>
-            <select value={complexity} onChange={(event) => setComplexity(event.target.value)} className="border border-white/10 bg-black/70 px-3 py-3 text-ink outline-none">
-              {complexities.map((item) => <option key={item}>{item}</option>)}
-            </select>
-          </div>
-          <div className="mb-4 flex flex-wrap gap-3 text-sm">
-            <span className="border border-greenCore/30 px-3 py-2 text-greenCore">{filtered.length} unique task types</span>
-            <span className="border border-cyanCore/30 px-3 py-2 text-cyanCore">Generalized and privacy-safe</span>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((task, index) => (
-              <motion.article
-                key={task.title}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.02 }}
-                className="group border border-white/10 bg-black/25 p-4 transition hover:border-cyanCore/60 hover:shadow-glow"
-              >
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <span className="text-xs font-bold text-greenCore">[COMPLETED]</span>
-                  <span className="text-xs text-white/50">{task.complexity}</span>
-                </div>
-                <h3 className="line-clamp-2 font-bold">{task.title}</h3>
-                <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/60 theme-light:text-slate-700">{task.detail}</p>
-                <div className="mt-4 inline-flex border border-cyanCore/30 px-2 py-1 text-xs text-cyanCore">{task.category}</div>
-              </motion.article>
-            ))}
-          </div>
-      </GlassPanel>
-    </Section>
-  );
-}
-
-function TaskAnalytics() {
-  const [chartsReady, setChartsReady] = useState(false);
-  useEffect(() => setChartsReady(true), []);
-  return (
-    <Section id="analytics">
-      <SectionTitle eyebrow="Task Analytics" title="Technical Operations Visualization" />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <GlassPanel>
-          <h3 className="mb-4 text-xl font-bold">Task Type Distribution</h3>
-          <div className="h-80 min-w-0">
-            {chartsReady && (
-            <ResponsiveContainer minWidth={1} minHeight={1}>
-              <PieChart>
-                <Pie data={categoryData} dataKey="value" nameKey="name" innerRadius={68} outerRadius={110} paddingAngle={4}>
-                  {categoryData.map((_, index) => <Cell key={index} fill={chartColors[index % chartColors.length]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ background: "#07101f", border: "1px solid rgba(39,244,255,.35)", color: "#d7fbff" }} />
-              </PieChart>
-            </ResponsiveContainer>
-            )}
-          </div>
-        </GlassPanel>
-        <GlassPanel>
-          <h3 className="mb-4 text-xl font-bold">Complexity Distribution</h3>
-          <div className="h-80 min-w-0">
-            {chartsReady && (
-            <ResponsiveContainer minWidth={1} minHeight={1}>
-              <BarChart data={complexityData}>
-                <CartesianGrid stroke="rgba(255,255,255,.08)" />
-                <XAxis dataKey="name" stroke="#d7fbff" />
-                <YAxis stroke="#d7fbff" />
-                <Tooltip contentStyle={{ background: "#07101f", border: "1px solid rgba(105,255,143,.35)", color: "#d7fbff" }} />
-                <Bar dataKey="value" fill="#69ff8f" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-            )}
-          </div>
-        </GlassPanel>
-        <GlassPanel>
-          <h3 className="mb-4 text-xl font-bold">Daily Activity Pulse</h3>
-          <div className="h-80 min-w-0">
-            {chartsReady && (
-            <ResponsiveContainer minWidth={1} minHeight={1}>
-              <BarChart data={activityData}>
-                <CartesianGrid stroke="rgba(255,255,255,.08)" />
-                <XAxis dataKey="date" stroke="#d7fbff" interval={2} />
-                <YAxis stroke="#d7fbff" />
-                <Tooltip contentStyle={{ background: "#07101f", border: "1px solid rgba(39,244,255,.35)", color: "#d7fbff" }} />
-                <Bar dataKey="value" fill="#27f4ff" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-            )}
-          </div>
-        </GlassPanel>
-        <GlassPanel>
-          <h3 className="mb-4 text-xl font-bold">Automation Efficiency</h3>
-          <div className="space-y-5">
-            {[
-              { label: "System Performance", value: 92 },
-              { label: "Automation Efficiency", value: 88 },
-              { label: "Workflow Stability", value: 95 },
-              { label: "Technical Operations", value: 91 }
-            ].map(({ label, value }) => (
-              <div key={label}>
-                <div className="mb-2 flex justify-between text-sm"><span>{label}</span><span className="text-greenCore">{value}%</span></div>
-                <div className="h-3 bg-white/10"><motion.div className="h-full bg-gradient-to-r from-cyanCore to-greenCore" initial={{ width: 0 }} whileInView={{ width: `${value}%` }} viewport={{ once: true }} /></div>
+        <div className="mb-5 grid gap-3 lg:grid-cols-[1fr_auto_auto]">
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="border border-white/10 bg-black/30 px-3 py-3 outline-none focus:border-cyanCore"
+            placeholder="Search task history..."
+          />
+          <select value={category} onChange={(event) => setCategory(event.target.value)} className="border border-white/10 bg-black/70 px-3 py-3 text-ink outline-none">
+            {categories.map((item) => <option key={item}>{item}</option>)}
+          </select>
+          <select value={complexity} onChange={(event) => setComplexity(event.target.value)} className="border border-white/10 bg-black/70 px-3 py-3 text-ink outline-none">
+            {complexities.map((item) => <option key={item}>{item}</option>)}
+          </select>
+        </div>
+        <div className="mb-4 flex flex-wrap gap-3 text-sm">
+          <span className="border border-greenCore/30 px-3 py-2 text-greenCore">{filtered.length} unique task types</span>
+          <span className="border border-cyanCore/30 px-3 py-2 text-cyanCore">Generalized and privacy-safe</span>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((task, index) => (
+            <motion.article
+              key={task.title}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.02 }}
+              className="group border border-white/10 bg-black/25 p-4 transition hover:border-cyanCore/60 hover:shadow-glow"
+            >
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span className="text-xs font-bold text-greenCore">[COMPLETED]</span>
+                <span className="text-xs text-white/50">{task.complexity}</span>
               </div>
-            ))}
-          </div>
-        </GlassPanel>
-      </div>
+              <h3 className="line-clamp-2 font-bold">{task.title}</h3>
+              <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/60 theme-light:text-slate-700">{task.detail}</p>
+              <div className="mt-4 inline-flex border border-cyanCore/30 px-2 py-1 text-xs text-cyanCore">{task.category}</div>
+            </motion.article>
+          ))}
+        </div>
+      </GlassPanel>
     </Section>
   );
 }
@@ -967,148 +714,6 @@ function SkillsTree({
             </div>
           </div>
         </GlassPanel>
-      </div>
-    </Section>
-  );
-}
-
-function TechnologyStack() {
-  return (
-    <Section id="tech">
-      <SectionTitle eyebrow="Resume Scan" title="Technology Stack Display" />
-      <div className="grid gap-5 lg:grid-cols-[.85fr_1.15fr]">
-        <GlassPanel>
-          <h3 className="text-2xl font-bold">Professional Identity</h3>
-          <div className="mt-5 space-y-3">
-            {resume.brandRoles.map((role) => (
-              <div key={role} className="border border-greenCore/25 bg-greenCore/10 p-3 text-greenCore">{role}</div>
-            ))}
-          </div>
-        </GlassPanel>
-        <GlassPanel>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {resume.detectedTechnologies.map((tech, index) => (
-              <motion.div
-                key={tech}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.025 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-                className="border border-cyanCore/25 bg-cyanCore/10 p-4 shadow-glow"
-              >
-                <Cpu className="mb-3 text-cyanCore" />
-                <div className="font-bold">{tech}</div>
-                <div className="mt-2 h-1 bg-white/10">
-                  <motion.div className="h-full bg-greenCore" initial={{ width: 0 }} whileInView={{ width: `${70 + (index % 5) * 5}%` }} viewport={{ once: true }} />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </GlassPanel>
-      </div>
-    </Section>
-  );
-}
-
-function Projects() {
-  const [activeProject, setActiveProject] = useState<WorkProject | null>(operationsProjects[0] ?? null);
-  return (
-    <Section id="projects">
-      <SectionTitle eyebrow="Project Ops" title="Project Operations Center" />
-      <div className="grid gap-6 xl:grid-cols-[1fr_.75fr]">
-        <div className="grid gap-5 md:grid-cols-2">
-        {operationsProjects.map((project) => (
-          <motion.article key={project.id} onClick={() => setActiveProject(project)} whileHover={{ y: -6 }} className="cursor-pointer border border-white/10 bg-panel p-5 backdrop-blur-xl">
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <span className="text-xs font-bold text-greenCore">[{project.status}]</span>
-              <span className="text-xs text-white/50 theme-light:text-slate-600">{project.department}</span>
-            </div>
-            <h3 className="text-2xl font-bold">{project.name}</h3>
-            <p className="mt-3 text-sm leading-6 text-white/65 theme-light:text-slate-700">{publicProjectSummary(project)}</p>
-            <div className="mt-5 flex h-24 items-end gap-2 border border-white/10 bg-black/20 p-3">
-              {[42, 58, 74, project.progress, 87, 94, 100].map((height, index) => (
-                <motion.div
-                  key={index}
-                  className="flex-1 bg-gradient-to-t from-greenCore to-cyanCore"
-                  animate={{ height: [`${height * 0.65}%`, `${height}%`, `${height * 0.8}%`] }}
-                  transition={{ duration: 1.8, repeat: Infinity, delay: index * 0.08 }}
-                />
-              ))}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {project.tech.map((tech) => <span key={tech} className="border border-greenCore/25 px-2 py-1 text-xs text-greenCore">{tech}</span>)}
-            </div>
-            <div className="mt-5 border border-cyanCore/20 bg-cyanCore/10 p-3 text-sm leading-6 text-cyanCore">
-              Role: workflow design, troubleshooting, automation updates, data handling, validation, and user support.
-            </div>
-          </motion.article>
-        ))}
-        </div>
-        <GlassPanel>
-          <div className="text-xs uppercase tracking-[0.28em] text-greenCore">Expandable System Overview</div>
-          {activeProject && (
-            <motion.div key={activeProject.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-              <h3 className="mt-4 text-3xl font-black">{activeProject.name}</h3>
-              <p className="mt-3 text-sm text-cyanCore">{activeProject.department} / {activeProject.rawStatus}</p>
-              <p className="mt-5 leading-7 text-white/70 theme-light:text-slate-700">{publicProjectSummary(activeProject)}</p>
-              <div className="mt-6 border border-white/10 bg-black/25 p-4">
-                <div className="mb-3 text-sm text-greenCore">Simulated Live Monitoring</div>
-                {["Deployment health", "Data flow", "User handoff"].map((label, index) => (
-                  <div key={label} className="mb-4">
-                    <div className="mb-1 flex justify-between text-xs"><span>{label}</span><span>{96 - index * 4}%</span></div>
-                    <div className="h-2 bg-white/10"><div className="h-full bg-cyanCore" style={{ width: `${96 - index * 4}%` }} /></div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 grid gap-3">
-                {activeProject.tech.map((tech, index) => (
-                  <div key={tech} className="flex items-center gap-3 border border-white/10 p-3">
-                    <span className="grid h-8 w-8 place-items-center border border-cyanCore/40 text-cyanCore">{index + 1}</span>
-                    {tech}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-          <div className="mt-7 border-t border-white/10 pt-5">
-            <h3 className="text-xl font-bold">Recommended Portfolio Builds</h3>
-            <div className="mt-3 grid gap-2">
-              {resume.recommendedProjects.map((project) => (
-                <div key={project} className="border border-cyanCore/20 bg-cyanCore/10 p-3 text-sm text-cyanCore">{project}</div>
-              ))}
-            </div>
-          </div>
-        </GlassPanel>
-      </div>
-    </Section>
-  );
-}
-
-function ProjectMap() {
-  const paths = [
-    ["Power Apps", "SharePoint", "Teams Notifications", "Reporting Dashboard"],
-    ["Excel Macro", "CSV", "Sage System", "Operations Records"],
-    ["WordPress", "Inquiry Database", "Email Routing", "Website System"]
-  ];
-  return (
-    <Section id="map">
-      <SectionTitle eyebrow="Network Map" title="Interactive Project Map" />
-      <div className="grid gap-5 lg:grid-cols-3">
-        {paths.map((path) => (
-          <GlassPanel key={path.join("-")}>
-            <div className="space-y-3">
-              {path.map((node, index) => (
-                <div key={node}>
-                  <motion.div whileHover={{ scale: 1.02 }} className="border border-cyanCore/30 bg-cyanCore/10 p-4 text-center font-semibold text-cyanCore shadow-glow">
-                    {node}
-                  </motion.div>
-                  {index < path.length - 1 && <div className="mx-auto h-8 w-px bg-gradient-to-b from-cyanCore to-greenCore shadow-greenGlow" />}
-                </div>
-              ))}
-            </div>
-          </GlassPanel>
-        ))}
       </div>
     </Section>
   );
@@ -1190,7 +795,7 @@ function Certifications() {
   return (
     <Section id="certifications">
       <SectionTitle eyebrow="Learning Logs" title="Certifications & Seminars" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {certifications.map((item, index) => (
           <motion.div
             key={item}
@@ -1209,202 +814,19 @@ function Certifications() {
   );
 }
 
-function LegacyFixTheSystemGame() {
-  const [stage, setStage] = useState<GameStage>("intro");
-  const [progress, setProgress] = useState(0);
-  const [viruses, setViruses] = useState([true, true, true, true]);
-  const [workflow, setWorkflow] = useState<string[]>([]);
-  const [message, setMessage] = useState("Welcome Technician! Fix company systems inspired by Vince's real support records.");
-  const [seconds, setSeconds] = useState(0);
-  const timer = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (stage !== "intro" && stage !== "done" && timer.current === null) {
-      timer.current = window.setInterval(() => setSeconds((value) => value + 1), 1000);
-    }
-    if (stage === "done" && timer.current) {
-      window.clearInterval(timer.current);
-      timer.current = null;
-    }
-    return () => {
-      if (timer.current) {
-        window.clearInterval(timer.current);
-        timer.current = null;
-      }
-    };
-  }, [stage]);
-
-  const advance = (next: GameStage, nextProgress: number, nextMessage: string) => {
-    setProgress(nextProgress);
-    setMessage(nextMessage);
-    setStage(next);
-  };
-
-  return (
-    <Section id="game">
-      <SectionTitle eyebrow="Mini Game" title="Fix The System" />
-      <GlassPanel>
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="text-xs uppercase tracking-[0.25em] text-greenCore">Mission Simulator</div>
-            <p className="mt-2 text-white/70 theme-light:text-slate-700">{message}</p>
-          </div>
-          <div className="border border-cyanCore/30 px-3 py-2 font-mono text-cyanCore">{seconds}s</div>
-        </div>
-        <div className="mb-6 h-3 border border-white/10 bg-black/30 p-0.5">
-          <motion.div className="h-full bg-gradient-to-r from-cyanCore to-greenCore" animate={{ width: `${progress}%` }} />
-        </div>
-
-        {stage === "intro" && (
-          <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
-            <div className="border border-greenCore/30 bg-greenCore/10 p-5">
-              <h3 className="text-2xl font-bold">Welcome Technician!</h3>
-              <p className="mt-3 text-white/70 theme-light:text-slate-700">Fix real-world incidents inspired by Vince TASK records: printer setup, server cables, Excel issues, workflow errors, and XML converter updates.</p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button onClick={() => advance("cable", 10, "Task 1: connect the server LAN cable for a workstation setup.")} className="border border-greenCore px-4 py-3 text-greenCore hover:bg-greenCore hover:text-black">
-                Start Mission
-              </button>
-              <button onClick={() => advance("ticket", 75, "Task 4: solve the support ticket.")} className="border border-white/15 px-4 py-3 text-white/70 hover:border-cyanCore hover:text-cyanCore theme-light:text-slate-700">
-                Skip Tutorial
-              </button>
-            </div>
-          </div>
-        )}
-
-        {stage === "cable" && (
-          <div className="grid gap-5 md:grid-cols-2">
-            <DraggableCable onDone={() => advance("virus", 35, "Task 2: clear workflow errors and endpoint alerts.")} />
-          </div>
-        )}
-
-        {stage === "virus" && (
-          <div className="relative min-h-72 border border-white/10 bg-black/20 p-5">
-            <div className="mb-4 text-sm text-cyanCore">Endpoint scan: threats detected</div>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              {viruses.map((alive, index) => (
-                <button
-                  key={index}
-                  disabled={!alive}
-                  onClick={() => {
-                    const next = viruses.map((virus, virusIndex) => (virusIndex === index ? false : virus));
-                    setViruses(next);
-                    if (next.every((virus) => !virus)) advance("workflow", 60, "Task 3: connect Power Apps, SharePoint, and Teams in order.");
-                  }}
-                  className={`grid aspect-square place-items-center border text-4xl transition ${
-                    alive ? "border-red-400/60 bg-red-500/10 text-red-300 hover:scale-95" : "border-greenCore/50 bg-greenCore/10 text-greenCore"
-                  }`}
-                >
-                  {alive ? "!" : <Check />}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {stage === "workflow" && (
-          <div className="grid gap-4 md:grid-cols-3">
-            {["Power Apps", "SharePoint", "Teams"].map((node) => (
-              <button
-                key={node}
-                onClick={() => {
-                  const expected = ["Power Apps", "SharePoint", "Teams"][workflow.length];
-                  if (node !== expected) {
-                    setMessage(`Hint: connect ${expected} next.`);
-                    return;
-                  }
-                  const next = [...workflow, node];
-                  setWorkflow(next);
-                  if (next.length === 3) advance("ticket", 80, "Task 4: solve the support ticket.");
-                }}
-                className={`min-h-32 border p-5 text-left transition ${
-                  workflow.includes(node) ? "border-greenCore bg-greenCore/10 shadow-greenGlow" : "border-cyanCore/30 hover:bg-cyanCore/10"
-                }`}
-              >
-                <Network className="mb-4 text-cyanCore" />
-                <div className="text-xl font-bold">{node}</div>
-                <div className="mt-2 text-sm text-white/60 theme-light:text-slate-700">Tap in guided order</div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {stage === "ticket" && (
-          <div className="border border-white/10 bg-black/20 p-5">
-            <h3 className="text-2xl font-bold">Support Ticket: Excel record file not responding</h3>
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {["Restart PC", "Clear Office cache", "Remove monitor cable"].map((choice) => (
-                <button
-                  key={choice}
-                  onClick={() => {
-                    if (choice === "Clear Office cache") advance("done", 100, "Systems Stabilized ✓");
-                    else setMessage("That might not target the root cause. Try the Office-specific fix.");
-                  }}
-                  className="border border-white/10 p-4 text-left transition hover:border-cyanCore hover:bg-cyanCore/10"
-                >
-                  {choice}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {stage === "done" && (
-          <motion.div initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} className="border border-greenCore/50 bg-greenCore/10 p-8 text-center shadow-greenGlow">
-            <Check className="mx-auto mb-4 h-16 w-16 text-greenCore" />
-            <h3 className="text-4xl font-black text-greenCore">Systems Stabilized ✓</h3>
-            <p className="mt-4 text-xl">Built by Vince Matthew Magampon</p>
-            <p className="mt-2 text-cyanCore">IT Support & Automation Developer</p>
-          </motion.div>
-        )}
-      </GlassPanel>
-    </Section>
-  );
-}
-
-function DraggableCable({ onDone }: { onDone: () => void }) {
-  const [connected, setConnected] = useState(false);
-  return (
-    <>
-      <div className="relative min-h-72 border border-white/10 bg-black/20 p-5">
-        <div className="mb-4 text-sm text-cyanCore">Mission: connect server cable for workstation setup</div>
-        <motion.button
-          drag
-          dragConstraints={{ left: -10, right: 260, top: -20, bottom: 120 }}
-          onDragEnd={(_, info) => {
-            if (info.offset.x > 130) {
-              setConnected(true);
-              window.setTimeout(onDone, 550);
-            }
-          }}
-          className={`absolute left-8 top-28 h-16 w-32 border text-sm font-bold ${
-            connected ? "border-greenCore bg-greenCore/20 text-greenCore" : "border-cyanCore bg-cyanCore/10 text-cyanCore"
-          }`}
-        >
-          {connected ? "Server linked" : "LAN Cable"}
-        </motion.button>
-      </div>
-      <div className="relative min-h-72 border border-greenCore/40 bg-greenCore/10 p-5 shadow-greenGlow">
-        <div className="absolute left-1/2 top-8 -translate-x-1/2 animate-bounce text-greenCore">↓</div>
-        <div className="grid h-full place-items-center">
-          <div className="grid h-28 w-36 place-items-center border-2 border-greenCore text-greenCore">SERVER PORT</div>
-        </div>
-      </div>
-    </>
-  );
-}
-
 function Contact() {
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactMessage, setContactMessage] = useState("");
   const [contactStatus, setContactStatus] = useState("");
+  const [contactOk, setContactOk] = useState<boolean | null>(null);
   const [sendingContact, setSendingContact] = useState(false);
 
   const submitContact = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSendingContact(true);
     setContactStatus("Transmitting message...");
+    setContactOk(null);
     try {
       const response = await fetch("/api/contact", {
         method: "POST",
@@ -1419,12 +841,14 @@ function Contact() {
       if (!response.ok) {
         throw new Error(result.error || "Message failed.");
       }
-      setContactStatus("Message sent to magamponvince@gmail.com.");
+      setContactStatus("Message sent successfully.");
+      setContactOk(true);
       setContactName("");
       setContactEmail("");
       setContactMessage("");
     } catch (error) {
       setContactStatus(error instanceof Error ? error.message : "Message failed.");
+      setContactOk(false);
     } finally {
       setSendingContact(false);
     }
@@ -1445,7 +869,11 @@ function Contact() {
             <button type="submit" disabled={sendingContact} className="inline-flex items-center gap-2 border border-greenCore px-5 py-3 font-semibold text-greenCore transition hover:bg-greenCore hover:text-black disabled:cursor-not-allowed disabled:opacity-60">
               <Send size={17} /> {sendingContact ? "Transmitting..." : "Transmit Message"}
             </button>
-            {contactStatus && <p className="font-mono text-sm text-cyanCore">{contactStatus}</p>}
+            {contactStatus && (
+              <p className={`font-mono text-sm ${contactOk === true ? "text-greenCore" : contactOk === false ? "text-red-400" : "text-cyanCore"}`}>
+                {contactStatus}
+              </p>
+            )}
           </form>
         </GlassPanel>
         <GlassPanel>

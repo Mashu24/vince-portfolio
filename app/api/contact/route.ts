@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       from: `"Portfolio Contact" <${process.env.GMAIL_USER}>`,
       to: recipient,
       replyTo: safeEmail.includes("@") ? safeEmail : undefined,
-      subject: `Portfolio inquiry from ${safeName}`,
+      subject: `Portfolio Contact Form - ${safeName}`,
       text: [
         "New portfolio contact message",
         "",
